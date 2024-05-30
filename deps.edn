@@ -1,0 +1,20 @@
+{:deps {;;jakarta.jms/jakarta.jms-api {:mvn/version "3.1.0"}
+        org.apache.activemq/activemq-client {:mvn/version "6.1.2"}
+        org.apache.qpid/qpid-jms-client {:mvn/version "2.5.0"}}
+
+ :aliases
+ {:dev
+  {:extra-paths ["dev-resources" "env/dev"]
+   :extra-deps {yogthos/config {:mvn/version "1.2.0"}
+                ch.qos.logback/logback-classic {:mvn/version "1.5.6"}}}
+
+  :test
+  {:extra-paths ["test"]
+   :extra-deps {com.monkeyprojects/build {:mvn/version "0.2.0"}}
+   :exec-fn monkey.test/all}
+
+  :watch
+  {:exec-fn monkey.test/watch}
+
+  :junit
+  {:exec-fn monkey.test/junit}}}
