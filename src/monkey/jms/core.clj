@@ -82,3 +82,7 @@
   (->Producer (.createProducer ctx)
               #(.createTextMessage ctx %)
               (->destination dest ctx)))
+
+(def produce
+  "Alias for `make-producer` for consistency with `consume`."
+  make-producer)

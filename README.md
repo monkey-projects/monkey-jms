@@ -47,7 +47,7 @@ Each of the objects implements `AutoCloseable`, so you can also use them in
 
 ## Serialization
 
-For simplicity are the messages always `TextMessage`s.  But it's up to you
+For simplicity the are messages always `TextMessage`s.  But it's up to you
 what you put in those messages.  You can `comp`ose the listener and producer
 to suit your needs.  For example:
 
@@ -60,6 +60,9 @@ to suit your needs.  For example:
 ;; Consumer that parses json
 (def json-consumer (c/consume ctx "topic://some.json.topic" (comp println json/parse-string)))
 ```
+
+Maybe in a future version we will add the possibility for fine-grained control
+over the construction of messages.
 
 ## Durable Consumers
 
