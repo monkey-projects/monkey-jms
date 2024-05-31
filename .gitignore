@@ -1,4 +1,5 @@
 pom.xml.asc
+junit.xml
 *.jar
 *.class
 /lib/
