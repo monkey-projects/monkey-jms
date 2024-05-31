@@ -3,11 +3,19 @@
   (:import org.apache.qpid.jms.JmsConnectionFactory
            [jakarta.jms Destination JMSContext MessageListener]))
 
+(defn- maybe-set-client-id [ctx id]
+  (when id
+    (.setClientID ctx id))
+  ctx)
+
 (defn ^JMSContext connect
-  "Connects to the configured JMS server"
-  [{:keys [username password url]}]
+  "Connects to the configured JMS server.  The options map takes a `url`, and
+   optional `username` and `password`.  You can also specify a `client-id` for
+   durable subscriptions."
+  [{:keys [username password url client-id]}]
   (doto (.. (JmsConnectionFactory. username password url)
             (createContext))
+    (maybe-set-client-id client-id)
     (.start)))
 
 (defn disconnect
@@ -43,10 +51,20 @@
 (defn consume
   "Starts consuming messages from the given destination.  Messages are passed
    to the listener.  Returns an `AutoCloseable` that can be used to stop 
-   consuming."
+   consuming.  The optional `opts` argument is a map that can hold an `:id`
+   for a durable subscription.  Not that you need to set a client id on the
+   context as well for this to work."
   [ctx dest listener & [opts]]
-  (doto (.createConsumer ctx (->destination dest ctx))
-    (.setMessageListener (make-listener (comp listener (memfn getText))))))
+  (let [d (->destination dest ctx)]
+    (doto (if-let [id (:id opts)]
+            (.createDurableConsumer ctx d id)
+            (.createConsumer ctx d))
+      (.setMessageListener (make-listener (comp listener (memfn getText)))))))
+
+(defn unsubscribe
+  "Unsubscribes the connection from a durable subscription."
+  [ctx id]
+  (.unsubscribe ctx id))
 
 (defrecord Producer [prod msg-maker dest]
   clojure.lang.IFn
@@ -62,6 +80,5 @@
    The producer also implements `AutoCloseable`, to allow it to be shut down."
   [ctx dest & [opts]]
   (->Producer (.createProducer ctx)
-              ;; TODO Make this smarter
               #(.createTextMessage ctx %)
               (->destination dest ctx)))

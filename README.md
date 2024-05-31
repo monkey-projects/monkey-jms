@@ -1,2 +1,84 @@
-# monkey-jms
-JMS 3 wrapper code
+# Monkey JMS
+
+This is a Clojure library that provides wrapper code for [JMS 3](https://jakarta.ee/learn/docs/jakartaee-tutorial/current/messaging/).
+
+## Why?
+
+I've played around with [Bowerick](https://github.com/ruedigergad/bowerick) which is
+nice, but one the one hand it contains too much stuff I don't need (and hence, unwanted
+dependencies), and on the other hand doesn't provide functionality that I *do* need,
+like durable subscribers.  So I decided to roll my own.
+
+## Usage
+
+Include the dependency in your project:
+```clojure
+{:deps {com.monkeyprojects/monkey-jms {:mvn/version "0.1.0-SNAPSHOT"}}}
+```
+
+Then require the namespace and you can create a connection (actually a `JMSContext`)
+and producers and/or consumers.
+
+```clojure
+(require '[monkey.jms.core :as c])
+
+;; Connect.  The connection is auto-started.
+(def ctx (c/connect {:url "amqp://localhost:61616"
+                     :username "testuser"
+		     :password "verysecret"}))
+
+;; Start consuming.  In this case, it will just print the received message.
+(def consumer (c/consume ctx "topic://test.topic" println))
+
+;; Producer is a fn that can be closed
+(def producer (c/make-producer ctx "topic://test.topic"))
+;; Send a message
+(producer "Hi, I'm a test message")
+
+;; Stop consuming and producing
+(.close producer)
+(.close consumer)
+;; Close connection
+(.close ctx)
+```
+
+Each of the objects implements `AutoCloseable`, so you can also use them in
+`with-open`.
+
+## Serialization
+
+For simplicity are the messages always `TextMessage`s.  But it's up to you
+what you put in those messages.  You can `comp`ose the listener and producer
+to suit your needs.  For example:
+
+```clojure
+(require '[cheshire.core :as json])
+
+;; Producer that encodes to json before sending
+(def json-producer (comp producer json/generate-string))
+
+;; Consumer that parses json
+(def json-consumer (c/consume ctx "topic://some.json.topic" (comp println json/parse-string)))
+```
+
+## Durable Consumers
+
+You can also create durable consumers, first by specifying a `client-id` in the connection
+options, and then by specifying an `id` in the options to `consume`.
+```clojure
+(def ctx (c/connect {:url "amqp://localhost:61616"
+                     :username "testuser"
+		     :password "verysecret"
+		     :client-id "unique-client-id"}))
+		     
+(def durable-cons (c/consume ctx "topic://test.topic" my-handler {:id "durable-consumer-id")))
+
+;; When no longer needed, you can `unsubscribe`
+(c/unsubscribe ctx "durable-consumer-id")
+```
+
+## License
+
+Copyright (c) 2024 by [Monkey Projects BV](https://www.monkey-projects.be).
+
+[MIT License](LICENSE)
