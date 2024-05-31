@@ -20,18 +20,18 @@ Then require the namespace and you can create a connection (actually a `JMSConte
 and producers and/or consumers.
 
 ```clojure
-(require '[monkey.jms.core :as c])
+(require '[monkey.jms :as jms])
 
 ;; Connect.  The connection is auto-started.
-(def ctx (c/connect {:url "amqp://localhost:61616"
-                     :username "testuser"
-		     :password "verysecret"}))
+(def ctx (jms/connect {:url "amqp://localhost:61616"
+                       :username "testuser"
+                       :password "verysecret"}))
 
 ;; Start consuming.  In this case, it will just print the received message.
-(def consumer (c/consume ctx "topic://test.topic" println))
+(def consumer (jms/consume ctx "topic://test.topic" println))
 
 ;; Producer is a fn that can be closed
-(def producer (c/make-producer ctx "topic://test.topic"))
+(def producer (jms/make-producer ctx "topic://test.topic"))
 ;; Send a message
 (producer "Hi, I'm a test message")
 
@@ -58,7 +58,7 @@ to suit your needs.  For example:
 (def json-producer (comp producer json/generate-string))
 
 ;; Consumer that parses json
-(def json-consumer (c/consume ctx "topic://some.json.topic" (comp println json/parse-string)))
+(def json-consumer (jms/consume ctx "topic://some.json.topic" (comp println json/parse-string)))
 ```
 
 Maybe in a future version we will add the possibility for fine-grained control
@@ -69,15 +69,33 @@ over the construction of messages.
 You can also create durable consumers, first by specifying a `client-id` in the connection
 options, and then by specifying an `id` in the options to `consume`.
 ```clojure
-(def ctx (c/connect {:url "amqp://localhost:61616"
-                     :username "testuser"
-		     :password "verysecret"
-		     :client-id "unique-client-id"}))
+(def ctx (jms/connect {:url "amqp://localhost:61616"
+                       :username "testuser"
+                       :password "verysecret"
+                       :client-id "unique-client-id"}))
 		     
 (def durable-cons (c/consume ctx "topic://test.topic" my-handler {:id "durable-consumer-id")))
 
 ;; When no longer needed, you can `unsubscribe`
-(c/unsubscribe ctx "durable-consumer-id")
+(jms/unsubscribe ctx "durable-consumer-id")
+```
+
+## Synchronous Consumption
+
+Sometimes it's more useful or straightforward to actively poll received messages.
+You can achieve this by not passing a listener in the `consume` function.  The
+consumer is also a Clojure function that you can invoke to poll for the next
+message.  You can pass a timeout (in msecs).  If you pass a timeout of zero, it
+will immediately return unless a message is ready.
+
+```clojure
+;; You can still pass an options map should you so desire
+(def consume (jms/consume ctx "test.topic"))
+
+;; Receive next message
+(def msg (consume 1000))
+
+(println "The next message received is:" msg)
 ```
 
 ## License

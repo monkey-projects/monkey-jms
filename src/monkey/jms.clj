@@ -1,4 +1,4 @@
-(ns monkey.jms.core
+(ns monkey.jms
   "Core namespace for the MonkeyProjects JMS/ActiveMQ wrapper"
   (:import org.apache.qpid.jms.JmsConnectionFactory
            [jakarta.jms Destination JMSContext MessageListener]))
@@ -48,18 +48,43 @@
     (onMessage [_ msg]
       (f msg))))
 
+(defrecord Consumer [consumer]
+  clojure.lang.IFn
+  (invoke [_]
+    (.getText (.receive consumer)))
+  (invoke [_ timeout]
+    (some->
+     (cond
+       (nil? timeout) (.receive consumer)
+       (= 0 timeout) (.receiveNoWait consumer)
+       (number? timeout) (.receive consumer timeout)
+       :else (throw (ex-info "Invalid timeout value" {:timeout timeout})))
+     (.getText)))
+  java.lang.AutoCloseable
+  (close [_]
+    (.close consumer)))
+
 (defn consume
   "Starts consuming messages from the given destination.  Messages are passed
    to the listener.  Returns an `AutoCloseable` that can be used to stop 
    consuming.  The optional `opts` argument is a map that can hold an `:id`
    for a durable subscription.  Not that you need to set a client id on the
    context as well for this to work."
-  [ctx dest listener & [opts]]
-  (let [d (->destination dest ctx)]
-    (doto (if-let [id (:id opts)]
+  [ctx dest & [listener-or-opts opts]]
+  (let [d (->destination dest ctx)
+        f? (fn? listener-or-opts)
+        listener (when f? listener-or-opts)
+        opts (if f? opts listener-or-opts)
+        c (if-let [id (:id opts)]
             (.createDurableConsumer ctx d id)
-            (.createConsumer ctx d))
-      (.setMessageListener (make-listener (comp listener (memfn getText)))))))
+            (.createConsumer ctx d))]
+    (when listener
+      (.setMessageListener c (make-listener (comp listener (memfn getText)))))
+    (->Consumer c)))
+
+(def make-consumer
+  "Alias for `consume`, to be similar to `make-producer`."
+  consume)
 
 (defn unsubscribe
   "Unsubscribes the connection from a durable subscription."

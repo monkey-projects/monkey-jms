@@ -1,6 +1,6 @@
-(ns monkey.jms.core-test
+(ns monkey.jms-test
   (:require [clojure.test :refer [deftest testing is use-fixtures]]
-            [monkey.jms.core :as sut])
+            [monkey.jms :as sut])
   (:import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ
            org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
            org.apache.activemq.artemis.api.core.TransportConfiguration
@@ -51,7 +51,7 @@
 (use-fixtures :once with-broker)
 
 (deftest produce-consume
-  (testing "can produce and consume messages"
+  (testing "can produce and consume messages async"
     (let [conn (sut/connect {:url url
                              :username "artemis"
                              :password "artemis"})
@@ -90,4 +90,17 @@
       (let [consumer (sut/consume conn topic handler {:id id})]
         (is (not= :timeout (wait-for #(not-empty @recv))))
         (is (= msg (first @recv)))
-        (is (nil? (sut/disconnect conn)))))))
+        (is (nil? (sut/disconnect conn))))))
+
+  (testing "can poll for messages"
+    (let [client-id "test-client"
+          id "sync-subscription"
+          conn (sut/connect {:url url
+                             :username "artemis"
+                             :password "artemis"
+                             :client-id client-id})
+          producer (sut/make-producer conn topic)
+          consumer (sut/consume conn topic {:id id})
+          msg "This is another test message"]
+      (is (some? (producer msg)))
+      (is (= msg (consumer 1000))))))
