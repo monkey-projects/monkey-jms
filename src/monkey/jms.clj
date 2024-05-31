@@ -48,10 +48,10 @@
     (onMessage [_ msg]
       (f msg))))
 
-(defrecord Consumer [consumer]
+(defrecord Consumer [consumer deserializer]
   clojure.lang.IFn
   (invoke [_]
-    (.getText (.receive consumer)))
+    (deserializer (.receive consumer)))
   (invoke [_ timeout]
     (some->
      (cond
@@ -59,10 +59,18 @@
        (= 0 timeout) (.receiveNoWait consumer)
        (number? timeout) (.receive consumer timeout)
        :else (throw (ex-info "Invalid timeout value" {:timeout timeout})))
-     (.getText)))
+     (deserializer)))
   java.lang.AutoCloseable
   (close [_]
     (.close consumer)))
+
+(defmulti message->str class)
+
+(defmethod message->str jakarta.jms.TextMessage [msg]
+  (.getText msg))
+
+(defmethod message->str jakarta.jms.BytesMessage [msg]
+  (String. (.getBytes msg)))
 
 (defn consume
   "Starts consuming messages from the given destination.  Messages are passed
@@ -74,13 +82,15 @@
   (let [d (->destination dest ctx)
         f? (fn? listener-or-opts)
         listener (when f? listener-or-opts)
-        opts (if f? opts listener-or-opts)
+        {:keys [deserializer]
+         :or {deserializer message->str}
+         :as opts} (if f? opts listener-or-opts)
         c (if-let [id (:id opts)]
             (.createDurableConsumer ctx d id)
             (.createConsumer ctx d))]
     (when listener
-      (.setMessageListener c (make-listener (comp listener (memfn getText)))))
-    (->Consumer c)))
+      (.setMessageListener c (make-listener (comp listener deserializer))))
+    (->Consumer c deserializer)))
 
 (def make-consumer
   "Alias for `consume`, to be similar to `make-producer`."

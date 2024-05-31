@@ -64,6 +64,17 @@ to suit your needs.  For example:
 Maybe in a future version we will add the possibility for fine-grained control
 over the construction of messages.
 
+When receiving messages, we're not always sure that the messages will be `TextMessage`s.
+For this I have provided a multimethod `message->str` that uses `class` as a dispatch function.
+It handles `TextMessage` and `BytesMessage`.  You can add your own implementation if needed,
+but you can also pass a `:deserializer` option to the `consume` function to override this
+default behaviour.
+
+```clojure
+;; Consumer that explicitly calls `getText` on the incoming message
+(def custom-consumer (jms/consume ctx "topic://test.topic" println {:deserializer (memfn getText)}))
+```
+
 ## Durable Consumers
 
 You can also create durable consumers, first by specifying a `client-id` in the connection
