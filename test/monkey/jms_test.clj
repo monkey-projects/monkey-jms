@@ -103,4 +103,22 @@
           consumer (sut/consume conn topic {:id id})
           msg "This is another test message"]
       (is (some? (producer msg)))
+      (is (= msg (consumer 1000)))))
+
+  (testing "can handle `BytesMessage`"
+    (let [client-id (str (random-uuid))
+          id "bytes-subscription"
+          conn (sut/connect {:url url
+                             :username "artemis"
+                             :password "artemis"
+                             :client-id client-id})
+          make-bytes-message (fn [ctx s]
+                               (let [msg (.createBytesMessage ctx)]
+                                 (.writeBytes msg (.getBytes s))
+                                 msg))
+          producer (sut/make-producer conn topic
+                                      {:serializer make-bytes-message})
+          consumer (sut/consume conn topic {:id id})
+          msg "This is another test message"]
+      (is (some? (producer msg)))
       (is (= msg (consumer 1000))))))

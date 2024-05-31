@@ -70,7 +70,9 @@
   (.getText msg))
 
 (defmethod message->str jakarta.jms.BytesMessage [msg]
-  (String. (.getBytes msg)))
+  (let [buf (byte-array (.getBodyLength msg))]
+    (.readBytes msg buf)
+    (String. buf)))
 
 (defn consume
   "Starts consuming messages from the given destination.  Messages are passed
@@ -109,14 +111,18 @@
   (close [_]
     (.close prod)))
 
+(defn make-text-message [ctx s]
+  (.createTextMessage ctx s))
+
 (defn make-producer
   "Creates a producer function.  The function accepts a single argument, the
    messages to produce.  How messages are built can be specified in the options.
    The producer also implements `AutoCloseable`, to allow it to be shut down."
   [ctx dest & [opts]]
-  (->Producer (.createProducer ctx)
-              #(.createTextMessage ctx %)
-              (->destination dest ctx)))
+  (let [serializer (or (:serializer opts) make-text-message)]
+    (->Producer (.createProducer ctx)
+                (partial serializer ctx)
+                (->destination dest ctx))))
 
 (def produce
   "Alias for `make-producer` for consistency with `consume`."
