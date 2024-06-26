@@ -61,8 +61,10 @@ to suit your needs.  For example:
 (def json-consumer (jms/consume ctx "topic://some.json.topic" (comp println json/parse-string)))
 ```
 
-Maybe in a future version we will add the possibility for fine-grained control
-over the construction of messages.
+If you want to use anything else but `BytesMessage`s, you can pass in a `:serializer`
+function as an option to the producer.  This is a 2-arity function that takes the
+`JMSContext` and the object to serialize.  As stated, by default it now always creates
+a `TextMessage` and assumes the input is a `String`.
 
 When receiving messages, we're not always sure that the messages will be `TextMessage`s.
 For this I have provided a multimethod `message->str` that uses `class` as a dispatch function.
@@ -90,6 +92,12 @@ options, and then by specifying an `id` in the options to `consume`.
 ;; When no longer needed, you can `unsubscribe`
 (jms/unsubscribe ctx "durable-consumer-id")
 ```
+
+The `client-id` set on the connection ensures that **only one client with that id** can
+connect at the same time.  Should another client attempt to connect using the same `client-id`,
+it will receive an error.  The `id` specified on the consumer is only unique within that
+same client.  It is not possible to register multiple consumers for the same client with
+the same subscription id.
 
 ## Synchronous Consumption
 
