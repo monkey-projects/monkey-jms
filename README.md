@@ -13,7 +13,7 @@ like durable subscribers.  So I decided to roll my own.
 
 Include the dependency in your project:
 ```clojure
-{:deps {com.monkeyprojects/monkey-jms {:mvn/version "0.1.0-SNAPSHOT"}}}
+{:deps {com.monkeyprojects/monkey-jms {:mvn/version "0.2.0"}}}
 ```
 
 Then require the namespace and you can create a connection (actually a `JMSContext`)
@@ -47,7 +47,7 @@ Each of the objects implements `AutoCloseable`, so you can also use them in
 
 ## Serialization
 
-For simplicity the are messages always `TextMessage`s.  But it's up to you
+For simplicity the messages are always `TextMessage`s.  But it's up to you
 what you put in those messages.  You can `comp`ose the listener and producer
 to suit your needs.  For example:
 
@@ -61,7 +61,7 @@ to suit your needs.  For example:
 (def json-consumer (jms/consume ctx "topic://some.json.topic" (comp println json/parse-string)))
 ```
 
-If you want to use anything else but `BytesMessage`s, you can pass in a `:serializer`
+If you want to use anything else but `TextMessage`s, you can pass in a `:serializer`
 function as an option to the producer.  This is a 2-arity function that takes the
 `JMSContext` and the object to serialize.  As stated, by default it now always creates
 a `TextMessage` and assumes the input is a `String`.
@@ -111,7 +111,7 @@ will immediately return unless a message is ready.
 ;; You can still pass an options map should you so desire
 (def consume (jms/consume ctx "test.topic"))
 
-;; Receive next message
+;; Receive next message, wait for a second
 (def msg (consume 1000))
 
 (println "The next message received is:" msg)
@@ -119,6 +119,6 @@ will immediately return unless a message is ready.
 
 ## License
 
-Copyright (c) 2024 by [Monkey Projects BV](https://www.monkey-projects.be).
+Copyright (c) 2024-2025 by [Monkey Projects BV](https://www.monkey-projects.be).
 
 [MIT License](LICENSE)
