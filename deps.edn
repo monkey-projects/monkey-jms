@@ -31,10 +31,10 @@
                :pom-data [[:licenses
                            [:license
                             [:name "MIT"]
-                            [:url "https://mit-license.org/"]]]]}
+                            [:url "https://mit-license.org/"]]]]}}
 
   :install
   {:exec-fn monkey.build/jar+install}
 
   :publish
-  {:exec-fn monkey.build/jar+deploy}}}}
+  {:exec-fn monkey.build/jar+deploy}}}
