@@ -74,6 +74,13 @@
     (.readBytes msg buf)
     (String. buf)))
 
+(defn set-listener
+  "Explicitly sets a message listener on a consumer.  Note that when a listener
+   is set, it is no longer possible to synchronously consume messages."
+  [consumer l]
+  (.setMessageListener (:consumer consumer) (make-listener l))
+  consumer)
+
 (defn consume
   "Starts consuming messages from the given destination.  Messages are passed
    to the listener.  Returns an `AutoCloseable` that can be used to stop 
@@ -90,9 +97,9 @@
         c (if-let [id (:id opts)]
             (.createDurableConsumer ctx d id)
             (.createConsumer ctx d))]
-    (when listener
-      (.setMessageListener c (make-listener (comp listener deserializer))))
-    (->Consumer c deserializer)))
+    (cond-> (->Consumer c deserializer)
+      listener
+      (set-listener (comp listener deserializer)))))
 
 (def make-consumer
   "Alias for `consume`, to be similar to `make-producer`."
