@@ -7,7 +7,9 @@
 (defn sub-lib [dir]
   (fn [ctx]
     (->> ((p/deps-library {:test-job-id (str "test-" dir)
-                           :publish-job-id (str "publish-" dir)}) ctx)
+                           :publish-job-id (str "publish-" dir)
+                           :artifact-id (str "test-junit-" dir)})
+          ctx)
          (map #(m/work-dir % dir)))))
 
 [(sub-lib "core")
