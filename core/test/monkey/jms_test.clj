@@ -1,10 +1,7 @@
 (ns monkey.jms-test
   (:require [clojure.test :refer [deftest testing is use-fixtures]]
-            [monkey.jms :as sut])
-  (:import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ
-           org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
-           org.apache.activemq.artemis.api.core.TransportConfiguration
-           org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory))
+            [monkey.jms :as sut]
+            [monkey.jms.artemis :as artemis]))
 
 (def broker-port 61617)
 (def url (format "amqp://localhost:%d" broker-port))
@@ -20,33 +17,8 @@
           v
           (recur (System/currentTimeMillis)))))))
 
-(def transport-config
-  (TransportConfiguration.
-   (.getName NettyAcceptorFactory)
-   {"port" (str broker-port)
-    "protocols" "AMQP"}))
-
-(defn start-broker
-  "Starts an embedded Artemis broker with AMQP connector"
-  []
-  (doto (EmbeddedActiveMQ.)
-    (.setConfiguration
-     (.. (ConfigurationImpl.)
-         (setPersistenceEnabled false)
-         (setJournalDirectory "target/data/journal")
-         (setSecurityEnabled false)
-         (addAcceptorConfiguration transport-config)))
-    (.start)))
-
-(defn stop-broker [b]
-  (.stop b))
-
 (defn with-broker [f]
-  (let [b (start-broker)]
-    (try
-      (f)
-      (finally 
-        (stop-broker b)))))
+  (artemis/with-broker {:broker-port broker-port} f))
 
 (use-fixtures :once with-broker)
 

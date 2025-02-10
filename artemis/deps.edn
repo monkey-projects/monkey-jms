@@ -1,17 +1,10 @@
-{:deps {org.apache.activemq/activemq-client {:mvn/version "6.1.5"}
-        org.apache.qpid/qpid-jms-client {:mvn/version "2.6.1"}}
+{:deps {org.apache.activemq/artemis-server {:mvn/version "2.39.0"}
+        org.apache.activemq/artemis-amqp-protocol {:mvn/version "2.39.0"}}
 
  :aliases
- {:dev
-  {:extra-paths ["dev-resources" "env/dev"]
-   :extra-deps {ch.qos.logback/logback-classic {:mvn/version "1.5.16"}}}
-
-  :test
+ {:test
   {:extra-paths ["test"]
-   :extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1"}
-                ;; For embedded broker in tests
-                org.apache.activemq/artemis-server {:mvn/version "2.39.0"}
-                org.apache.activemq/artemis-amqp-protocol {:mvn/version "2.39.0"}}
+   :extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1"}}
    :exec-fn monkey.test/all}
 
   :watch
@@ -24,8 +17,8 @@
   {:extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1"}
                 ch.qos.logback/logback-classic {:mvn/version "1.5.16"}}
    :exec-fn monkey.build/jar
-   :exec-args {:jar "target/monkey-jms.jar"
-               :lib "com.monkeyprojects/monkey-jms"
+   :exec-args {:jar "target/monkey-jms-artemis.jar"
+               :lib "com.monkeyprojects/monkey-jms-artemis"
                :version [[:env "LIB_VERSION"] "0.2.1-SNAPSHOT"]
                :scm {:url "https://github.com/monkey-projects/monkey-jms"}
                :pom-data [[:licenses
