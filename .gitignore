@@ -4,8 +4,8 @@ junit.xml
 *.jar
 *.class
 /lib/
-/classes/
-/target/
+classes/
+target/
 /checkouts/
 .lein-deps-sum
 .lein-repl-history
