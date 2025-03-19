@@ -7,6 +7,7 @@
    :extra-deps {ch.qos.logback/logback-classic {:mvn/version "1.5.16"}}}
 
   :test
+  ;; clj -X:test
   {:extra-paths ["test"]
    :extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1"}
                 ;; For embedded broker in tests
@@ -14,9 +15,11 @@
    :exec-fn monkey.test/all}
 
   :watch
+  ;; clj -X:test:watch
   {:exec-fn monkey.test/watch}
 
   :junit
+  ;; clj -X:test:junit
   {:exec-fn monkey.test/junit}
   
   :jar
@@ -33,7 +36,9 @@
                             [:url "https://mit-license.org/"]]]]}}
 
   :install
+  ;; clj -X:jar:install
   {:exec-fn monkey.build/jar+install}
 
   :publish
+  ;; clj -X:jar:publish
   {:exec-fn monkey.build/jar+deploy}}}

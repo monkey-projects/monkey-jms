@@ -116,7 +116,9 @@
     (.send prod dest (msg-maker msg)))
   java.lang.AutoCloseable
   (close [_]
-    (.close prod)))
+    ;; Only close if the producer implements it
+    (when (instance? java.lang.AutoCloseable prod)
+      (.close prod))))
 
 (defn make-text-message [ctx s]
   (.createTextMessage ctx s))
