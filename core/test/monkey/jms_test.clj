@@ -40,7 +40,7 @@
       (is (nil? (sut/disconnect conn)))))
 
   (testing "can produce and consume durable messages"
-    (let [client-id "test-client"
+    (let [client-id (str (random-uuid))
           id "test-subscription"
           conn (sut/connect {:url url
                              :username "artemis"
@@ -64,8 +64,34 @@
         (is (= msg (first @recv)))
         (is (nil? (sut/disconnect conn))))))
 
+  (testing "can produce and consume shared durable messages"
+    (let [client-id (str (random-uuid))
+          id "test-subscription"
+          conn (sut/connect {:url url
+                             :username "artemis"
+                             :password "artemis"
+                             :client-id client-id})
+          recv (atom [])
+          handler (partial swap! recv conj)
+          producer (sut/make-producer conn topic)
+          make-consumer #(sut/consume conn topic handler {:id id :shared? true})
+          ;; Create consumer to register it
+          consumer (make-consumer)
+          msg "This is a test message"]
+      (is (some? conn))
+      ;; Shut down the consumer first
+      (is (nil? (.close consumer)))
+      (is (ifn? producer))
+      ;; Produce a message and then start consuming.  We expect the message
+      ;; to be received anyway.
+      (is (some? (producer msg)))
+      (let [consumer (make-consumer)]
+        (is (not= :timeout (wait-for #(not-empty @recv))))
+        (is (= msg (first @recv)))
+        (is (nil? (sut/disconnect conn))))))
+
   (testing "can poll for messages"
-    (let [client-id "test-client"
+    (let [client-id (str (random-uuid))
           id "sync-subscription"
           conn (sut/connect {:url url
                              :username "artemis"
@@ -93,4 +119,26 @@
           consumer (sut/consume conn topic {:id id})
           msg "This is another test message"]
       (is (some? (producer msg)))
-      (is (= msg (consumer 1000))))))
+      (is (= msg (consumer 1000)))))
+
+  (testing "can specify message selector"
+    (let [conn (sut/connect {:url url
+                             :username "artemis"
+                             :password "artemis"})
+          recv (atom [])
+          maker (fn [ctx msg]
+                  (doto (.createTextMessage ctx (:message msg))
+                    (.setStringProperty "selector" (:selector msg))))
+          handler (partial swap! recv conj)
+          producer (sut/make-producer conn topic {:serializer maker})
+          consumer (sut/consume conn topic handler {:selector "selector = 'accepted'"})]
+      (is (some? conn))
+      (is (ifn? producer))
+      (is (some? (producer {:selector "other"
+                            :message "This message should not be accepted"})))
+      (is (some? (producer {:selector "accepted"
+                            :message "This message should be accepted"})))
+      (is (not= :timeout (wait-for #(not-empty @recv))))
+      (is (= 1 (count @recv)))
+      (is (= "This message should be accepted" (first @recv)))
+      (is (nil? (sut/disconnect conn))))))

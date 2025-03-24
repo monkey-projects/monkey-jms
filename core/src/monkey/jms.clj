@@ -86,17 +86,21 @@
    to the listener.  Returns an `AutoCloseable` that can be used to stop 
    consuming.  The optional `opts` argument is a map that can hold an `:id`
    for a durable subscription.  Not that you need to set a client id on the
-   context as well for this to work."
+   context as well for this to work.  You can also specify a `:selector`
+   for the consumer, to do broker-side message filtering.  If `:shared?` is true,
+   and an `:id` is specified, a shared durable consumer is created."
   [ctx dest & [listener-or-opts opts]]
   (let [d (->destination dest ctx)
         f? (fn? listener-or-opts)
         listener (when f? listener-or-opts)
-        {:keys [deserializer]
+        {:keys [deserializer selector shared?]
          :or {deserializer message->str}
          :as opts} (if f? opts listener-or-opts)
         c (if-let [id (:id opts)]
-            (.createDurableConsumer ctx d id)
-            (.createConsumer ctx d))]
+            (if shared?
+              (.createSharedDurableConsumer ctx d id selector)
+              (.createDurableConsumer ctx d id selector false))
+            (.createConsumer ctx d selector))]
     (cond-> (->Consumer c deserializer)
       listener
       (set-listener (comp listener deserializer)))))

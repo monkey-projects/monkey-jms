@@ -1,10 +1,10 @@
-{:deps {org.apache.activemq/activemq-client {:mvn/version "6.1.5"}
-        org.apache.qpid/qpid-jms-client {:mvn/version "2.6.1"}}
+{:deps {org.apache.activemq/activemq-client {:mvn/version "6.1.6"}
+        org.apache.qpid/qpid-jms-client {:mvn/version "2.7.0"}}
 
  :aliases
  {:dev
   {:extra-paths ["dev-resources" "env/dev"]
-   :extra-deps {ch.qos.logback/logback-classic {:mvn/version "1.5.16"}}}
+   :extra-deps {ch.qos.logback/logback-classic {:mvn/version "1.5.18"}}}
 
   :test
   ;; clj -X:test
@@ -24,11 +24,11 @@
   
   :jar
   {:extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1"}
-                ch.qos.logback/logback-classic {:mvn/version "1.5.16"}}
+                ch.qos.logback/logback-classic {:mvn/version "1.5.18"}}
    :exec-fn monkey.build/jar
    :exec-args {:jar "target/monkey-jms.jar"
                :lib "com.monkeyprojects/monkey-jms"
-               :version [[:env "LIB_VERSION"] "0.3.1-SNAPSHOT"]
+               :version [[:env "LIB_VERSION"] "0.3.2-SNAPSHOT"]
                :scm {:url "https://github.com/monkey-projects/monkey-jms"}
                :pom-data [[:licenses
                            [:license
