@@ -13,7 +13,7 @@ like durable subscribers.  So I decided to roll my own.
 
 Include the dependency in your project:
 ```clojure
-{:deps {com.monkeyprojects/monkey-jms {:mvn/version "0.2.0"}}}
+{:deps {com.monkeyprojects/monkey-jms {:mvn/version "0.3.1"}}}
 ```
 
 Then require the namespace and you can create a connection (actually a `JMSContext`)
@@ -87,7 +87,7 @@ options, and then by specifying an `id` in the options to `consume`.
                        :password "verysecret"
                        :client-id "unique-client-id"}))
 		     
-(def durable-cons (c/consume ctx "topic://test.topic" my-handler {:id "durable-consumer-id")))
+(def durable-cons (c/consume ctx "topic://test.topic" my-handler {:id "durable-consumer-id"}))
 
 ;; When no longer needed, you can `unsubscribe`
 (jms/unsubscribe ctx "durable-consumer-id")
@@ -98,6 +98,16 @@ connect at the same time.  Should another client attempt to connect using the sa
 it will receive an error.  The `id` specified on the consumer is only unique within that
 same client.  It is not possible to register multiple consumers for the same client with
 the same subscription id.
+
+By default, this will create a non-shared durable subscription.  If you want a shared
+consumer, add `shared? true` as an additional option on the consumer:
+
+```clojure
+(def shared-cons (c/consume ctx "topic://test.topic" my-handler {:id "durable-consumer-id" :shared? true}))
+```
+
+See [the JMS docs](https://jakarta.ee/specifications/messaging/3.1/apidocs/jakarta.messaging/jakarta/jms/jmscontext)
+for more on the difference between shared and unshared consumers.
 
 ## Synchronous Consumption
 
@@ -115,6 +125,20 @@ will immediately return unless a message is ready.
 (def msg (consume 1000))
 
 (println "The next message received is:" msg)
+```
+
+## Message Selectors
+
+JMS also has a concept of [message selectors](https://timjansen.github.io/jarfiller/guide/jms/selectors.xhtml),
+which allow broker-side filtering of messages.  This can be useful if you have a consumer
+that reads from a topic that has many messages, but only needs a few based on properties.
+You can enable message selection by specifying a `:selector` on the consumer.  For example,
+let's assume you want to read messages from a `high-volume.topic` that has a `customer` property,
+and only need messages for `Test Customer`, you can do this:
+
+```clojure
+(def filtered-consumer
+  (c/consume ctx "topic://high-volume.topic" my-handler {:selector "customer = 'Test Customer'"}))
 ```
 
 ## License
