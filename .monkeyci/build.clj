@@ -2,7 +2,7 @@
   (:require [monkey.ci.plugin
              [clj :as p]
              [github :as gh]]
-            [monkey.ci.build.v2 :as m]))
+            [monkey.ci.api :as m]))
 
 (defn sub-lib [dir]
   (fn [ctx]
